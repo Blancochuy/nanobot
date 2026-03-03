@@ -11,17 +11,7 @@ services:
       - sh
       - -c
       - |
-        cat <<EOF > /root/.nanobot/config.json
-        {
-          "providers": {
-            "openai": {
-              "api_key": "${GROQ_API_KEY}",
-              "base_url": "https://api.groq.com/openai/v1"
-            }
-          },
-          "model": "moonshotai/Kimi-K2-Instruct-0905"
-        }
-        EOF
+        echo '{ "providers": { "openai": { "api_key": "${GROQ_API_KEY}", "base_url": "https://api.groq.com/openai/v1" } }, "model": "moonshotai/Kimi-K2-Instruct-0905" }' > /root/.nanobot/config.json
 
   nanobot-gateway:
     container_name: nanobot-gateway
