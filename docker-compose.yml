@@ -16,9 +16,9 @@ services:
       - |
         echo '{
           "providers": {
-            "openai": {
-              "api_key": "${GROQ_API_KEY}",
-              "base_url": "https://api.groq.com/openai/v1"
+            "custom": {
+              "apiKey": "${GROQ_API_KEY}",
+              "apiBase": "https://api.groq.com/openai/v1"
             }
           },
           "agents": {
