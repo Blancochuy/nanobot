@@ -1,7 +1,27 @@
 version: '3.8'
 
 services:
+  init-config:
+    image: busybox
+    volumes:
+      - nanobot_data:/root/.nanobot
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    command: >
+      sh -c "echo '{
+        \"providers\": {
+          \"openai\": {
+            \"api_key\": \"${GROQ_API_KEY}\",
+            \"base_url\": \"https://api.groq.com/openai/v1\"
+          }
+        },
+        \"model\": \"moonshotai/Kimi-K2-Instruct-0905\"
+      }' > /root/.nanobot/config.json"
+
   nanobot-gateway:
+    depends_on:
+      init-config:
+        condition: service_completed_successfully
     container_name: nanobot-gateway
     build:
       context: .
@@ -13,9 +33,6 @@ services:
     restart: always
     ports:
       - '18790:18790'
-    environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - NANO_CONFIG=${NANO_CONFIG}
     deploy:
       resources:
         limits:
