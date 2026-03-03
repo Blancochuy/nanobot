@@ -9,7 +9,9 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - LLM_MODEL=${LLM_MODEL}
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - TELEGRAM_USER_ID=${TELEGRAM_USER_ID}
+      - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_ALLOWED_USERS=${DISCORD_ALLOWED_USERS}
     command:
       - sh
       - -c
@@ -30,7 +32,12 @@ services:
             "telegram": {
               "enabled": true,
               "token": "${TELEGRAM_TOKEN}",
-              "allowFrom": ["${TELEGRAM_USER_ID}"]
+              "allowFrom": ${TELEGRAM_ALLOWED_USERS}
+            },
+            "discord": {
+              "enabled": true,
+              "token": "${DISCORD_TOKEN}",
+              "allowFrom": ${DISCORD_ALLOWED_USERS}
             }
           }
         }' > /root/.nanobot/config.json
