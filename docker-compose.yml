@@ -12,6 +12,7 @@ services:
       - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_ALLOWED_USERS=${DISCORD_ALLOWED_USERS}
+      - BRAVE_API_KEY=${BRAVE_API_KEY}
     command:
       - sh
       - -c
@@ -38,6 +39,14 @@ services:
               "enabled": true,
               "token": "${DISCORD_TOKEN}",
               "allowFrom": ${DISCORD_ALLOWED_USERS}
+            }
+          },
+          "tools": {
+            "web": {
+              "search": {
+                "apiKey": "${BRAVE_API_KEY}",
+                "maxResults": 5
+              }
             }
           }
         }' > /root/.nanobot/config.json
