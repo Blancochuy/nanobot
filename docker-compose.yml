@@ -7,11 +7,27 @@ services:
       - nanobot_data:/root/.nanobot
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_USER_ID=${TELEGRAM_USER_ID}
     command:
       - sh
       - -c
       - |
-        echo '{ "providers": { "openai": { "api_key": "${GROQ_API_KEY}", "base_url": "https://api.groq.com/openai/v1" } }, "channels": { "gateway": { "port": 18790 } } }' > /root/.nanobot/config.json
+        echo '{
+          "providers": {
+            "openai": {
+              "api_key": "${GROQ_API_KEY}",
+              "base_url": "https://api.groq.com/openai/v1"
+            }
+          },
+          "channels": {
+            "telegram": {
+              "enabled": true,
+              "token": "${TELEGRAM_TOKEN}",
+              "allowFrom": ["${TELEGRAM_USER_ID}"]
+            }
+          }
+        }' > /root/.nanobot/config.json
 
   nanobot-gateway:
     container_name: nanobot-gateway
@@ -23,8 +39,6 @@ services:
     command:
       - gateway
     restart: always
-    ports:
-      - '18790:18790'
     deploy:
       resources:
         limits:
