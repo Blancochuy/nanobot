@@ -1,31 +1,26 @@
-x-common-config: &common-config
-  build:
-    context: .
-    dockerfile: Dockerfile
-  volumes:
-    - ~/.nanobot:/root/.nanobot
+version: '3.8'
 
 services:
   nanobot-gateway:
     container_name: nanobot-gateway
-    <<: *common-config
-    command: ["gateway"]
-    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - nanobot_data:/root/.nanobot
+    command:
+      - gateway
+    restart: always
     ports:
-      - 18790:18790
+      - '18790:18790'
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - NANO_CONFIG=${NANO_CONFIG}
     deploy:
       resources:
         limits:
           cpus: '1'
           memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-  
-  nanobot-cli:
-    <<: *common-config
-    profiles:
-      - cli
-    command: ["status"]
-    stdin_open: true
-    tty: true
+
+volumes:
+  nanobot_data:
