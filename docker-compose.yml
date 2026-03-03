@@ -7,16 +7,21 @@ services:
       - nanobot_data:/root/.nanobot
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
-    command: >
-      sh -c "echo '{
-        \"providers\": {
-          \"openai\": {
-            \"api_key\": \"${GROQ_API_KEY}\",
-            \"base_url\": \"https://api.groq.com/openai/v1\"
-          }
-        },
-        \"model\": \"moonshotai/Kimi-K2-Instruct-0905\"
-      }' > /root/.nanobot/config.json"
+    command:
+      - sh
+      - -c
+      - |
+        cat <<EOF > /root/.nanobot/config.json
+        {
+          "providers": {
+            "openai": {
+              "api_key": "${GROQ_API_KEY}",
+              "base_url": "https://api.groq.com/openai/v1"
+            }
+          },
+          "model": "moonshotai/Kimi-K2-Instruct-0905"
+        }
+        EOF
 
   nanobot-gateway:
     depends_on:
