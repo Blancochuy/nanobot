@@ -7,6 +7,7 @@ services:
       - nanobot_data:/root/.nanobot
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - LLM_MODEL=${LLM_MODEL}
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       - TELEGRAM_USER_ID=${TELEGRAM_USER_ID}
     command:
@@ -18,6 +19,11 @@ services:
             "openai": {
               "api_key": "${GROQ_API_KEY}",
               "base_url": "https://api.groq.com/openai/v1"
+            }
+          },
+          "agents": {
+            "defaults": {
+              "model": "${LLM_MODEL}"
             }
           },
           "channels": {
