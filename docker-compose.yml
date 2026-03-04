@@ -6,7 +6,7 @@ services:
     volumes:
       - nanobot_data:/root/.nanobot
     environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
+      - ZAI_API_KEY=${ZAI_API_KEY}
       - LLM_MODEL=${LLM_MODEL}
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
@@ -20,8 +20,8 @@ services:
         echo '{
           "providers": {
             "custom": {
-              "apiKey": "${GROQ_API_KEY}",
-              "apiBase": "https://api.groq.com/openai/v1"
+              "apiKey": "${ZAI_API_KEY}",
+              "apiBase": "https://api.z.ai/api/coding/paas/v4"
             }
           },
           "agents": {
