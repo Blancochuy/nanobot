@@ -13,6 +13,7 @@ services:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_ALLOWED_USERS=${DISCORD_ALLOWED_USERS}
       - BRAVE_API_KEY=${BRAVE_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
     command:
       - sh
       - -c
@@ -46,6 +47,14 @@ services:
               "search": {
                 "apiKey": "${BRAVE_API_KEY}",
                 "maxResults": 5
+              }
+            }
+          },
+          "mcpServers": {
+            "stripe": {
+              "url": "https://mcp.stripe.com/",
+              "env": {
+                "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
               }
             }
           }
