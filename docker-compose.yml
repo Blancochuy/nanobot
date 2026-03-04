@@ -52,8 +52,8 @@ services:
             "mcpServers": {
               "stripe": {
                 "url": "https://mcp.stripe.com/",
-                "env": {
-                  "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
+                "headers": {
+                  "Authorization": "Bearer ${STRIPE_SECRET_KEY}"
                 }
               }
             }
