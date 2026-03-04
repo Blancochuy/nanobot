@@ -48,13 +48,13 @@ services:
                 "apiKey": "${BRAVE_API_KEY}",
                 "maxResults": 5
               }
-            }
-          },
-          "mcpServers": {
-            "stripe": {
-              "url": "https://mcp.stripe.com/",
-              "env": {
-                "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
+            },
+            "mcpServers": {
+              "stripe": {
+                "url": "https://mcp.stripe.com/",
+                "env": {
+                  "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
+                }
               }
             }
           }
