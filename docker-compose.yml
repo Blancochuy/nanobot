@@ -55,7 +55,7 @@ services:
                 "headers": {
                   "Authorization": "Bearer ${STRIPE_SECRET_KEY}"
                 }
-              }
+              },
               "fencode_blog_mcp": {
                 "command": "npx",
                 "args": [
