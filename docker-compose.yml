@@ -56,6 +56,15 @@ services:
                   "Authorization": "Bearer ${STRIPE_SECRET_KEY}"
                 }
               }
+              "fencode_blog_mcp": {
+                "command": "npx",
+                "args": [
+                  "-y",
+                  "mcp-remote@latest",
+                  "https://fencode-blog-mcp-main.vercel.app/mcp"
+                ],
+                "disabled": false
+              }
             }
           }
         }' > /root/.nanobot/config.json
