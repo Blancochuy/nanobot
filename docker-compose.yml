@@ -61,7 +61,7 @@ services:
                 "args": [
                   "-y",
                   "mcp-remote@latest",
-                  "https://fencode-blog-mcp-main.vercel.app/mcp"
+                  "https://fencode-blog-mcp.vercel.app/mcp"
                 ],
                 "disabled": false
               }
