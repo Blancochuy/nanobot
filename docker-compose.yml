@@ -38,6 +38,10 @@ services:
       - |
         mkdir -p /home/nanobot/.nanobot
         P_NAME=$$(echo "$${PROVIDER_NAME}" | tr '[:upper:]' '[:lower:]' | tr -d ' ')
+        TG_ENABLED=false
+        DC_ENABLED=false
+        if [ -n "$${TELEGRAM_TOKEN}" ]; then TG_ENABLED=true; fi
+        if [ -n "$${DISCORD_TOKEN}" ]; then DC_ENABLED=true; fi
         echo "Configuring providers: custom and $${P_NAME}..."
         
         cat <<EOF > /home/nanobot/.nanobot/config.json
@@ -59,12 +63,12 @@ services:
           },
           "channels": {
             "telegram": {
-              "enabled": true,
+              "enabled": $${TG_ENABLED},
               "token": "$${TELEGRAM_TOKEN}",
               "allowFrom": $${TELEGRAM_ALLOWED_USERS}
             },
             "discord": {
-              "enabled": true,
+              "enabled": $${DC_ENABLED},
               "token": "$${DISCORD_TOKEN}",
               "allowFrom": $${DISCORD_ALLOWED_USERS}
             }
