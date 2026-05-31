@@ -61,6 +61,11 @@ services:
               "model": "$${LLM_MODEL}"
             }
           },
+          "gateway": {
+            "heartbeat": {
+              "enabled": false
+            }
+          },
           "channels": {
             "telegram": {
               "enabled": $${TG_ENABLED},
