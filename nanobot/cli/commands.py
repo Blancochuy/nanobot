@@ -1194,6 +1194,8 @@ def _run_gateway(
             ),
             payload=CronPayload(kind="system_event"),
         ))
+    else:
+        cron.unregister_system_job("heartbeat")
 
     async def _open_browser_when_ready() -> None:
         """Wait for the gateway to bind, then point the user's browser at the webui."""
