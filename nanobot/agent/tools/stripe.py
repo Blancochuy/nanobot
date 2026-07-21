@@ -88,6 +88,9 @@ def _normalize_subscription(subscription: dict[str, Any]) -> dict[str, Any]:
                 "price_id": _resource_id(price),
                 "product_id": _resource_id(price.get("product")),
                 "interval": recurring.get("interval"),
+                "quantity": item.get("quantity"),
+                "current_period_start": item.get("current_period_start"),
+                "current_period_end": item.get("current_period_end"),
             }
         )
     return {
@@ -96,6 +99,7 @@ def _normalize_subscription(subscription: dict[str, Any]) -> dict[str, Any]:
         "customer_id": customer_id,
         "customer_name": customer_name,
         "customer_email": customer_email,
+        "created": subscription.get("created"),
         "cancel_at_period_end": bool(subscription.get("cancel_at_period_end", False)),
         "current_period_start": subscription.get("current_period_start"),
         "current_period_end": subscription.get("current_period_end"),
@@ -137,6 +141,9 @@ def _validate_subscription(subscription: dict[str, Any]) -> None:
             interval = recurring.get("interval")
             if interval is not None and not isinstance(interval, str):
                 raise StripeReportError("invalid_response", status_code=200)
+        quantity = item.get("quantity")
+        if quantity is not None and (not isinstance(quantity, int) or isinstance(quantity, bool)):
+            raise StripeReportError("invalid_response", status_code=200)
 
 
 class StripeSubscriptionReportConfig(Base):

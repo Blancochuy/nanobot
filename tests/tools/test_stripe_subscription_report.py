@@ -21,12 +21,14 @@ def _subscription(sub_id, status, interval, customer):
         "id": sub_id,
         "status": status,
         "customer": customer,
+        "created": 1_690_000_000,
         "cancel_at_period_end": False,
         "current_period_start": 1_700_000_000,
         "current_period_end": 1_702_592_000,
         "items": {
             "data": [
                 {
+                    "quantity": 3,
                     "price": {
                         "id": f"price_{interval}",
                         "product": "prod_saleshow",
@@ -138,6 +140,8 @@ async def test_report_fetches_all_pages_and_normalizes_subscriptions():
     assert result["by_interval"] == {"month": 1, "year": 1}
     assert result["subscriptions"][0]["customer_name"] == "PINSA"
     assert result["subscriptions"][1]["customer_id"] == "cus_2"
+    assert result["subscriptions"][0]["created"] == 1_690_000_000
+    assert result["subscriptions"][0]["items"][0]["quantity"] == 3
     assert len(requests) == 2
 
 
