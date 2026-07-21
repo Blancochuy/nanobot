@@ -105,9 +105,18 @@ def _normalize_subscription(subscription: dict[str, Any]) -> dict[str, Any]:
 
 
 def _validate_subscription(subscription: dict[str, Any]) -> None:
+    status = subscription.get("status")
+    if not isinstance(status, str):
+        raise StripeReportError("invalid_response", status_code=200)
+
     customer = subscription.get("customer")
     if customer is not None and not isinstance(customer, (str, dict)):
         raise StripeReportError("invalid_response", status_code=200)
+    if isinstance(customer, dict):
+        for field in ("id", "name", "email"):
+            value = customer.get(field)
+            if value is not None and not isinstance(value, str):
+                raise StripeReportError("invalid_response", status_code=200)
 
     items = subscription.get("items", {})
     if not isinstance(items, dict):
@@ -124,6 +133,10 @@ def _validate_subscription(subscription: dict[str, Any]) -> None:
         recurring = price.get("recurring")
         if recurring is not None and not isinstance(recurring, dict):
             raise StripeReportError("invalid_response", status_code=200)
+        if isinstance(recurring, dict):
+            interval = recurring.get("interval")
+            if interval is not None and not isinstance(interval, str):
+                raise StripeReportError("invalid_response", status_code=200)
 
 
 class StripeSubscriptionReportConfig(Base):
@@ -286,11 +299,14 @@ class StripeSubscriptionReportTool(Tool):
         except StripeReportError as error:
             return self._failure(error)
 
-        normalized = [_normalize_subscription(subscription) for subscription in subscriptions]
-        observed_statuses = Counter(item.get("status") or "unknown" for item in normalized)
-        by_status = {status: observed_statuses.pop(status, 0) for status in _KNOWN_STATUSES}
-        by_status.update(observed_statuses)
-        by_interval = Counter(item["billing_interval"] for item in normalized)
+        try:
+            normalized = [_normalize_subscription(subscription) for subscription in subscriptions]
+            observed_statuses = Counter(item["status"] for item in normalized)
+            by_status = {status: observed_statuses.pop(status, 0) for status in _KNOWN_STATUSES}
+            by_status.update(observed_statuses)
+            by_interval = Counter(item["billing_interval"] for item in normalized)
+        except (AttributeError, KeyError, TypeError, ValueError):
+            return self._failure(StripeReportError("invalid_response", status_code=200))
         return json.dumps(
             {
                 "ok": True,

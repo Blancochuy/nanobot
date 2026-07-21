@@ -350,6 +350,27 @@ async def test_malformed_nested_subscription_is_sanitized():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "subscription",
+    [
+        _subscription("sub_bad_status", [], "month", "cus_1"),
+        _subscription("sub_bad_interval", "active", [], "cus_1"),
+    ],
+)
+async def test_unhashable_nested_values_are_sanitized(subscription):
+    payload = {"object": "list", "data": [subscription], "has_more": False}
+    tool = StripeSubscriptionReportTool(
+        StripeSubscriptionReportConfig(api_key="sk_test_example"),
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=payload)),
+    )
+
+    result = json.loads(await tool.execute())
+
+    assert result["ok"] is False
+    assert result["error"]["category"] == "invalid_response"
+
+
+@pytest.mark.asyncio
 async def test_non_finite_retry_after_uses_bounded_backoff():
     calls = 0
     sleeps = []
