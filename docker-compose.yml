@@ -85,20 +85,13 @@ services:
                 "maxResults": 5
               }
             },
+            "stripe": {
+              "enable": true,
+              "apiKey": "$${STRIPE_SECRET_KEY}",
+              "timeout": 20,
+              "maxRetries": 2
+            },
             "mcpServers": {
-              "stripe": {
-                "command": "npx",
-                "args": [
-                  "-y",
-                  "mcp-remote@latest",
-                  "https://mcp.stripe.com/",
-                  "--header",
-                  "Authorization:$${STRIPE_AUTH_HEADER}"
-                ],
-                "env": {
-                  "STRIPE_AUTH_HEADER": "Bearer $${STRIPE_SECRET_KEY}"
-                }
-              },
               "fencode_blog_mcp": {
                 "command": "npx",
                 "args": [
