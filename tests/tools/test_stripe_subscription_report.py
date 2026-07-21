@@ -125,7 +125,16 @@ async def test_report_fetches_all_pages_and_normalizes_subscriptions():
     assert result["source"] == "stripe_api_live"
     assert result["total"] == 2
     assert result["pages"] == 2
-    assert result["by_status"] == {"active": 1, "past_due": 1}
+    assert result["by_status"] == {
+        "active": 1,
+        "trialing": 0,
+        "past_due": 1,
+        "unpaid": 0,
+        "paused": 0,
+        "canceled": 0,
+        "incomplete": 0,
+        "incomplete_expired": 0,
+    }
     assert result["by_interval"] == {"month": 1, "year": 1}
     assert result["subscriptions"][0]["customer_name"] == "PINSA"
     assert result["subscriptions"][1]["customer_id"] == "cus_2"
@@ -284,3 +293,82 @@ async def test_malformed_success_is_sanitized():
             "request_id": None,
         },
     }
+
+
+@pytest.mark.asyncio
+async def test_status_counts_include_zeros_and_preserve_unknown_statuses():
+    statuses = [
+        "active",
+        "trialing",
+        "past_due",
+        "unpaid",
+        "paused",
+        "canceled",
+        "incomplete",
+        "incomplete_expired",
+        "future_status",
+    ]
+    payload = {
+        "object": "list",
+        "data": [
+            _subscription(f"sub_{index}", status, "month", f"cus_{index}")
+            for index, status in enumerate(statuses)
+        ],
+        "has_more": False,
+    }
+    tool = StripeSubscriptionReportTool(
+        StripeSubscriptionReportConfig(api_key="sk_test_example"),
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=payload)),
+    )
+
+    result = json.loads(await tool.execute())
+
+    assert result["by_status"] == {status: 1 for status in statuses}
+
+
+@pytest.mark.asyncio
+async def test_malformed_nested_subscription_is_sanitized():
+    payload = {
+        "object": "list",
+        "data": [{"id": "sub_bad", "status": "active", "items": None}],
+        "has_more": False,
+    }
+    tool = StripeSubscriptionReportTool(
+        StripeSubscriptionReportConfig(api_key="sk_test_example"),
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json=payload)),
+    )
+
+    assert json.loads(await tool.execute()) == {
+        "ok": False,
+        "source": "stripe_api_live",
+        "error": {
+            "category": "invalid_response",
+            "status_code": 200,
+            "request_id": None,
+        },
+    }
+
+
+@pytest.mark.asyncio
+async def test_non_finite_retry_after_uses_bounded_backoff():
+    calls = 0
+    sleeps = []
+
+    def handler(request):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(429, headers={"Retry-After": "inf"}, json={"error": {}})
+        return httpx.Response(200, json={"object": "list", "data": [], "has_more": False})
+
+    async def fake_sleep(delay):
+        sleeps.append(delay)
+
+    tool = StripeSubscriptionReportTool(
+        StripeSubscriptionReportConfig(api_key="sk_test_example", max_retries=1),
+        transport=httpx.MockTransport(handler),
+        sleep=fake_sleep,
+    )
+
+    assert json.loads(await tool.execute())["ok"] is True
+    assert sleeps == [1.0]

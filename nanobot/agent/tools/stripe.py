@@ -4,17 +4,30 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 from collections import Counter
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
+from pydantic import Field
 
 from nanobot.agent.tools.base import Tool, tool_parameters
 from nanobot.config.schema import Base
 
 _STRIPE_URL = "https://api.stripe.com/v1/subscriptions"
+_MAX_RETRY_DELAY = 30.0
+_KNOWN_STATUSES = (
+    "active",
+    "trialing",
+    "past_due",
+    "unpaid",
+    "paused",
+    "canceled",
+    "incomplete",
+    "incomplete_expired",
+)
 
 
 class StripeReportError(Exception):
@@ -49,11 +62,12 @@ def _customer_fields(value: Any) -> tuple[str | None, str | None, str | None]:
 
 def _billing_interval(subscription: dict[str, Any]) -> str:
     items = subscription.get("items", {}).get("data", [])
-    intervals = {
-        item.get("price", {}).get("recurring", {}).get("interval")
-        for item in items
-        if isinstance(item, dict) and isinstance(item.get("price"), dict)
-    }
+    intervals = set()
+    for item in items:
+        if not isinstance(item, dict) or not isinstance(item.get("price"), dict):
+            continue
+        recurring = item["price"].get("recurring") or {}
+        intervals.add(recurring.get("interval"))
     intervals.discard(None)
     if not intervals:
         return "unknown"
@@ -68,7 +82,7 @@ def _normalize_subscription(subscription: dict[str, Any]) -> dict[str, Any]:
     items = []
     for item in subscription.get("items", {}).get("data", []):
         price = item.get("price", {}) if isinstance(item, dict) else {}
-        recurring = price.get("recurring", {}) if isinstance(price, dict) else {}
+        recurring = (price.get("recurring") or {}) if isinstance(price, dict) else {}
         items.append(
             {
                 "price_id": _resource_id(price),
@@ -90,13 +104,35 @@ def _normalize_subscription(subscription: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _validate_subscription(subscription: dict[str, Any]) -> None:
+    customer = subscription.get("customer")
+    if customer is not None and not isinstance(customer, (str, dict)):
+        raise StripeReportError("invalid_response", status_code=200)
+
+    items = subscription.get("items", {})
+    if not isinstance(items, dict):
+        raise StripeReportError("invalid_response", status_code=200)
+    item_data = items.get("data", [])
+    if not isinstance(item_data, list):
+        raise StripeReportError("invalid_response", status_code=200)
+    for item in item_data:
+        if not isinstance(item, dict):
+            raise StripeReportError("invalid_response", status_code=200)
+        price = item.get("price", {})
+        if not isinstance(price, dict):
+            raise StripeReportError("invalid_response", status_code=200)
+        recurring = price.get("recurring")
+        if recurring is not None and not isinstance(recurring, dict):
+            raise StripeReportError("invalid_response", status_code=200)
+
+
 class StripeSubscriptionReportConfig(Base):
     """Configuration for live Stripe subscription snapshots."""
 
     enable: bool = True
     api_key: str = ""
-    timeout: float = 20.0
-    max_retries: int = 2
+    timeout: float = Field(default=20.0, gt=0, le=120)
+    max_retries: int = Field(default=2, ge=0, le=5)
 
 
 @tool_parameters({"type": "object", "properties": {}, "additionalProperties": False})
@@ -143,8 +179,8 @@ class StripeSubscriptionReportTool(Tool):
         if response is not None:
             try:
                 retry_after = float(response.headers.get("Retry-After", ""))
-                if retry_after >= 0:
-                    return retry_after
+                if math.isfinite(retry_after) and retry_after >= 0:
+                    return min(retry_after, _MAX_RETRY_DELAY)
             except ValueError:
                 pass
         return float(2**attempt)
@@ -238,6 +274,8 @@ class StripeSubscriptionReportTool(Tool):
                         for subscription in page
                     ):
                         raise StripeReportError("invalid_response", status_code=200)
+                    for subscription in page:
+                        _validate_subscription(subscription)
                     subscriptions.extend(page)
                     pages += 1
                     if not payload["has_more"]:
@@ -249,7 +287,9 @@ class StripeSubscriptionReportTool(Tool):
             return self._failure(error)
 
         normalized = [_normalize_subscription(subscription) for subscription in subscriptions]
-        by_status = Counter(item.get("status") or "unknown" for item in normalized)
+        observed_statuses = Counter(item.get("status") or "unknown" for item in normalized)
+        by_status = {status: observed_statuses.pop(status, 0) for status in _KNOWN_STATUSES}
+        by_status.update(observed_statuses)
         by_interval = Counter(item["billing_interval"] for item in normalized)
         return json.dumps(
             {

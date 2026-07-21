@@ -114,7 +114,8 @@ services:
         }
         EOF
         chown -R 1000:1000 /home/nanobot/.nanobot
-        chmod -R 755 /home/nanobot/.nanobot
+        chmod 700 /home/nanobot/.nanobot
+        chmod 600 /home/nanobot/.nanobot/config.json
         echo "Done."
 
   nanobot-gateway:
